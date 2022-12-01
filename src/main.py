@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Characters, Planets, Favorite_Characters, Favorite_Planets
 #from models import Person
 
 app = Flask(__name__)
@@ -56,9 +56,186 @@ def createUser():
     db.session.add(new_user)   
     db.session.commit()             
     
-    return 'User was added', 200   
+    return 'User was added', 200
+
+@app.route('/user/<int:id>', methods=['PUT'])
+def updateUser(id):
+    user1 = User.query.get(id)
+
+    body = request.get_json()
+    
+    if body == None:
+        return 'Body is empty', 400
+    if 'email' not in body:
+        return "Add the user email", 400
+
+    user1.email = body["email"]
+    db.session.commit()            
+    
+    return 'ok'
+
+@app.route('/user/<int:id>', methods=['DELETE'])
+def deleteUser(id):
+    user1 = User.query.get(id)
+    if user1 == None:
+        raise APIException('User not found', status_code=404)
+    db.session.delete(user1)
+    db.session.commit()  
+    return 'User deleted'
+
+@app.route('/people', methods=['GET'])
+def getCharacters():
+
+    people_query = Characters.query.all()
+
+    all_characters = list(map(lambda x: x.serialize(), people_query))
+
+    return jsonify(all_characters), 200
+
+@app.route('/people', methods=['POST'])
+def addCharacter():
+
+    body = request.get_json()
+    if body is None:
+        return "The request body is null", 400
+    if 'name' not in body:
+        return "Add the character's name", 400
+    if 'birth_year' not in body:
+        return "Add character's birth year", 400
+    if 'gender' not in body:
+        return "Add character's gender", 400
+    if 'hair_color' not in body:
+        return "Add character's hair color", 400
+    if 'eye_color' not in body:
+        return "Add character's eye color", 400        
+
+    new_character = Characters(name=body["name"], birth_year=body["birth_year"], gender=body["gender"], hair_color=body["hair_color"], eye_color=body["eye_color"])
+    db.session.add(new_character)   
+    db.session.commit()             
+    
+    return 'Character was added', 200
+
+@app.route('/people/<int:id>', methods=['PUT'])
+def updateCharacter(id):
+    character1 = Characters.query.get(id)
+
+    body = request.get_json()
+    
+    if body == None:
+        return 'Body is empty', 400
+    if 'name' in body:
+        return "Name cannot be edited", 400
+    if 'birth_year' in body:
+        character1.birth_year = body["birth_year"]
+    if 'gender' in body:
+        character1.gender = body["gender"]
+    if 'hair_color' in body:
+        character1.hair_color = body["hair_color"]
+    elif 'eye_color' in body:
+        character1.eye_color = body["eye_color"]            
+
+    db.session.commit()            
+    
+    return "Character's data has been updated", 200   
+
+@app.route('/people/<int:id>', methods=['GET'])
+def getCharacter(id):
+
+    character_query = Characters.query.get(id)
+
+    if character_query == None:
+        raise APIException('Character does not exist', status_code=404)    
+
+    return jsonify(character_query.serialize()), 200
+
+@app.route('/people/<int:id>', methods=['DELETE'])
+def deleteCharacter(id):
+    character1 = Characters.query.get(id)
+    if character1 == None:
+        raise APIException('Character not found', status_code=404)
+    db.session.delete(character1)
+    db.session.commit()  
+    return 'Character deleted'    
+
+@app.route('/planets', methods=['GET'])
+def getPlanets():
+
+    planets_query = Planets.query.all()
+
+    all_planets = list(map(lambda x: x.serialize(), planets_query))
+
+    return jsonify(all_planets), 200
+
+@app.route('/planets', methods=['POST'])
+def addPlanet():
+
+    body = request.get_json()
+    if body is None:
+        return "The request body is null", 400
+    if 'name' not in body:
+        return "Add the planet's name", 400
+    if 'population' not in body:
+        return "Add planet's population", 400
+    if 'terrain' not in body:
+        return "Add planet's terrain", 400          
+
+    new_planet = Planets(name=body["name"], population=body["population"], terrain=body["terrain"])
+    db.session.add(new_planet)   
+    db.session.commit()             
+    
+    return 'Planet was added', 200
+
+@app.route('/planets/<int:id>', methods=['PUT'])
+def updatePlanet(id):
+    planet1 = Planets.query.get(id)
+
+    body = request.get_json()
+    
+    if body == None:
+        return 'Body is empty', 400
+    if 'name' in body:
+        return "Name cannot be edited", 400
+    if 'population' in body:
+        planet1.population = body["population"]
+    elif 'terrain' in body:
+        planet1.terrain = body["terrain"]
+    
+    db.session.commit()            
+    
+    return "Planet's data has been updated", 200          
+
+@app.route('/planets/<int:id>', methods=['GET'])
+def getPlanet(id):
+
+    planet_query = Planets.query.get(id)
+
+    if planet_query == None:
+        raise APIException('Planet does not exist', status_code=404)    
+
+    return jsonify(planet_query.serialize()), 200
+
+@app.route('/planets/<int:id>', methods=['DELETE'])
+def deletePlanet(id):
+    planet1 = Planets.query.get(id)
+    if planet1 == None:
+        raise APIException('Planet not found', status_code=404)
+    db.session.delete(planet1)
+    db.session.commit()  
+    return 'Planet deleted'
+
+# @app.route('/user/favorites', methods=['GET'])
+# def userFavorites():
+
+#     favorites_query = User.query.all()
+
+#     all_favorites = list(map(lambda x: x.serialize_with_favorites(), favorites_query))
+
+#     return jsonify(all_favorites), 200         
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=False)
+
+  
