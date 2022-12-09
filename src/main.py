@@ -223,16 +223,84 @@ def deletePlanet(id):
     db.session.commit()  
     return 'Planet deleted'
 
-# @app.route('/user/favorites', methods=['GET'])
-# def userFavorites():
+@app.route('/user/favorites', methods=['GET'])
+def userFavorites():
 
-#     favorites_query = User.query.all()
+    favchar_query = Favorite_Characters.query.all()
+    favplat_query = Favorite_Planets.query.all()
 
-#     all_favorites = list(map(lambda x: x.serialize_with_favorites(), favorites_query))
+    user_Favorites = list(map(lambda x: x.serialize(), favchar_query))
+    user_Favorites1 = list(map(lambda x: x.serialize(), favplat_query))
 
-#     return jsonify(all_favorites), 200         
+    return jsonify(user_Favorites, user_Favorites1), 200
 
+@app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
+def addFavoritePlanet(planet_id):
 
+    body = request.get_json()
+
+    if body == None:
+        return "The request body is null", 400
+    if 'user_id' not in body:
+        return "Add the user's ID number", 400    
+    if 'planet_id' not in body:
+        return "Add the character's ID number", 400
+
+    newFav = Favorite_Planets(user_id=body["user_id"], planet_id=body["planet_id"])
+
+    favPlat = Planets.query.get(newFav.planet_id)
+
+    if favPlat == None:
+        raise APIException('Planet does not exist', status_code=404)
+
+    db.session.add(newFav)
+    db.session.commit()
+
+    return 'Favorite planet has been added', 200    
+
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def addFavoritePeople(people_id):
+
+    body = request.get_json()
+
+    if body == None:
+        return "The request body is null", 400
+    if 'user_id' not in body:
+        return "Add the user's ID number", 400    
+    if 'characters_id' not in body:
+        return "Add the character's ID number", 400
+
+    newFav = Favorite_Characters(user_id=body["user_id"], characters_id=body["characters_id"])
+
+    favChar = Characters.query.get(newFav.characters_id)
+
+    if favChar == None:
+        raise APIException('Character does not exist', status_code=404)
+
+    db.session.add(newFav)
+    db.session.commit()
+
+    return 'Favorite character has been added', 200 
+
+@app.route('/favorite/people/<int:id>', methods=['DELETE'])
+def deleteFavoriteCharacter(id):
+    character1 = Favorite_Characters.query.get(id)
+    if character1 == None:
+        raise APIException('Character not found', status_code=404)
+    db.session.delete(character1)
+    db.session.commit()  
+    return 'Favorite Character deleted'
+
+@app.route('/favorite/planet/<int:id>', methods=['DELETE'])
+def deleteFavoritePlanet(id):
+    planet1 = Favorite_Planets.query.get(id)
+    if planet1 == None:
+        raise APIException('Planet not found', status_code=404)
+    db.session.delete(planet1)
+    db.session.commit()  
+    return 'Favorite Planet deleted'           
+
+    
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
